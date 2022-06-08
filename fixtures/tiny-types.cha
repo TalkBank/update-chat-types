@@ -1,0 +1,20 @@
+@UTF8
+@PID:	11312/c-00016596-1
+@Begin
+@Languages:	eng
+@Participants:	CHI Ross Target_Child , MAR Mark Target_Child , MOT Mary Mother
+	, FAT Brian Father
+@ID:	eng|MacWhinney|CHI|4;11.25|male|TD||Target_Child|||
+@ID:	eng|MacWhinney|MAR|3;01.01||||Target_Child|||
+@ID:	eng|MacWhinney|MOT||female|||Mother|||
+@ID:	eng|MacWhinney|FAT||male|||Father|||
+@Media:	041125d, audio
+@Tape Location:	279
+@Date:	02-FEB-1983
+@Types:	long, toyplay, TD
+*CHI:	dad (.) did you notice that we have crystal shard ? 0_3798
+%mor:	n|dad v|do&PAST pro:per|you v|notice comp|that pro:sub|we v|have
+	n|crystal n|shard ?
+%gra:	1|2|SUBJ 2|0|ROOT 3|2|OBJ 4|2|JCT 5|7|LINK 6|7|SUBJ 7|4|COMP 8|9|MOD
+	9|7|OBJ 10|2|PUNCT
+@End

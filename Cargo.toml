@@ -1,0 +1,23 @@
+[package]
+name = "update-chat-types"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0"
+walkdir = "2.5"
+tempfile = "3.25"
+clap = { version = "4.5", features = ["derive"] }
+
+[dev-dependencies]
+divan = "0.1"
+rstest = "0.26"
+insta = "1.46"
+
+[[bench]]
+name = "my_benchmark"
+harness = false
+
+[profile.release]
+lto = true
+strip = true
