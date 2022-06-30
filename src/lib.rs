@@ -130,7 +130,7 @@ where
 {
     let mut updated = false;
 
-    while let Some(line) = lines.next() {
+    for line in lines.by_ref() {
         match line.as_bytes() {
             [b'@', b'E', b'n', b'd', ..] | [b'*', ..] => {
                 if let Some(w) = w {
@@ -201,17 +201,15 @@ pub fn update_types_to_output<W: Write>(
 
     let updated = updated_prefix(&mut strings, new_types, Some(&mut w));
 
-    if !dry_run {
-        if updated {
-            // Write out the prefix to out, then copy the rest of the
-            // lines from path to it.
-            out.write_all(&w).unwrap();
-            while let Some(line) = strings.next() {
-                writeln!(out, "{}", line).unwrap();
-            }
+    if !dry_run && updated {
+        // Write out the prefix to out, then copy the rest of the
+        // lines from path to it.
+        out.write_all(&w).unwrap();
+        for line in strings {
+            writeln!(out, "{}", line).unwrap();
         }
     }
-    return updated;
+    updated
 }
 
 /// Write to a temporary file before moving to new_path.
@@ -228,8 +226,8 @@ pub fn update_types_to_new_path(
 
     if dry_run {
         // Don't even bother to save prefix.
-        let updated = updated_prefix(&mut strings, new_types, None as Option<&mut Vec<u8>>);
-        updated
+
+        updated_prefix(&mut strings, new_types, None as Option<&mut Vec<u8>>)
     } else {
         // Save the prefix to write out in case there was an update.
         let mut prefix = vec![];
@@ -240,7 +238,7 @@ pub fn update_types_to_new_path(
             // Use temporary file to write everything out to.
             let mut named_temp_file = NamedTempFile::new().unwrap();
             named_temp_file.write_all(&prefix).unwrap();
-            while let Some(line) = strings.next() {
+            for line in strings {
                 writeln!(named_temp_file, "{}", line).unwrap();
             }
 
@@ -345,7 +343,7 @@ mod test {
         let path = "tiny-types.cha";
         let new_types = "@Types:\tlong, toyplay, FOO";
         for replace_types in [replace_types_slurp, replace_types_fast].iter() {
-            assert_eq!(replace_types(path, new_types), true);
+            assert!(replace_types(path, new_types));
         }
     }
 
@@ -354,7 +352,7 @@ mod test {
         let path = "no-types.cha";
         let new_types = "@Types:\tlong, toyplay, FOO";
         for replace_types in [replace_types_slurp, replace_types_fast].iter() {
-            assert_eq!(replace_types(path, new_types), true);
+            assert!(replace_types(path, new_types));
         }
     }
 
