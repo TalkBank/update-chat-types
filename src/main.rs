@@ -24,15 +24,24 @@ fn main() {
 }
 
 fn run(args: &Args) -> anyhow::Result<()> {
-    let num_updated = update_types_in_place(&args.chat_dir, args.dry_run)?;
-    println!(
-        "{} {} CHAT files.",
-        if args.dry_run {
-            "Would update"
-        } else {
-            "Updated"
-        },
-        num_updated
-    );
+    let updated_files = update_types_in_place(&args.chat_dir, args.dry_run)?;
+    let verb = if args.dry_run {
+        "Would update"
+    } else {
+        "Updated"
+    };
+    let n = updated_files.len();
+    if n == 0 {
+        println!("{verb} 0 CHAT files.");
+    } else {
+        println!("{verb} {n} CHAT files:");
+        for path in &updated_files {
+            if let Ok(rel) = path.strip_prefix(&args.chat_dir) {
+                println!("  {}", rel.display());
+            } else {
+                println!("  {}", path.display());
+            }
+        }
+    }
     Ok(())
 }

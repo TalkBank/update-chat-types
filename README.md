@@ -16,6 +16,34 @@ The tool walks the directory tree, reads the `0types.txt` files, then for each `
 
 ## Installation
 
+### As a pre-commit hook (recommended)
+
+The tool is designed to run as a git pre-commit hook in `*-data` repos. Run the bootstrap script once per machine:
+
+```bash
+# Build from source and install hook + binary:
+./bootstrap.sh
+
+# Or with a pre-built binary (for machines without Rust):
+./bootstrap.sh --binary /path/to/update-chat-types
+```
+
+This does:
+1. Installs the binary to `~/.talkbank/bin/update-chat-types`
+2. Installs the hook to `~/.talkbank/hooks/pre-commit`
+3. Sets `git config --global core.hooksPath ~/.talkbank/hooks`
+4. Adds `~/.talkbank/bin` to PATH in your shell profile
+
+After bootstrap, every `git commit` in a `*-data` repo will automatically fix `@Types` headers and include the fixes in the commit. Non-data repos are unaffected (the hook exits silently).
+
+For remote setup via SSH:
+```bash
+scp update-chat-types user@machine:~/
+ssh user@machine 'bash -s' < bootstrap.sh --binary ~/update-chat-types
+```
+
+### Manual install
+
 ```bash
 cargo install --path .
 ```
@@ -29,6 +57,22 @@ update-chat-types --chat-dir /path/to/corpus
 # Preview changes without modifying files
 update-chat-types --chat-dir /path/to/corpus --dry-run
 ```
+
+Output lists each modified file path relative to `--chat-dir`:
+```
+Updated 3 CHAT files:
+  Eng-NA/Bates/010600a.cha
+  Eng-NA/Bates/010600b.cha
+  Eng-NA/Brown/eve01.cha
+```
+
+### Pre-commit hook behavior
+
+The hook in `hooks/pre-commit`:
+- **Only activates** in repos whose name matches `*-data`
+- **Gracefully degrades** — if the binary isn't on PATH, prints a warning and allows the commit
+- **Auto-stages fixes** — runs `git add -u -- '*.cha'` so @Types corrections are included in the commit
+- **Only blocks commits** on tool errors (e.g., malformed `0types.txt`)
 
 ## Example
 
@@ -67,16 +111,16 @@ cargo test <test_name>   # e.g. cargo test test_get_types
 
 ### Architecture
 
-All logic lives in two files:
-
-- **`src/main.rs`** — CLI entry point using `clap`. Calls `update_types_in_place()` and prints human-readable errors on failure.
+- **`src/main.rs`** — CLI entry point using `clap`. Calls `update_types_in_place()` and prints modified file paths.
 - **`src/lib.rs`** — Core library. All public functions return `anyhow::Result`.
+- **`hooks/pre-commit`** — Git pre-commit hook (installed via `core.hooksPath`).
+- **`bootstrap.sh`** — One-time setup script to install the binary and hook.
 
 Public API (4 functions):
 - `get_types(&Path) -> Result<Option<String>>` — extract `@Types` header from a `.cha` file (streaming, stops after 30 lines or first utterance)
 - `read_types_file(&Path) -> Result<String>` — read the `@Types` value from a `0types.txt` file
 - `update_types_to_new_path(&Path, &Path, &str, bool) -> Result<bool>` — update a single file's `@Types` header via atomic temp file write
-- `update_types_in_place(&Path, bool) -> Result<u32>` — orchestrator: walk directory, collect type mappings, update all `.cha` files
+- `update_types_in_place(&Path, bool) -> Result<Vec<PathBuf>>` — orchestrator: walk directory, collect type mappings, update all `.cha` files, return paths of modified files
 
 Key internal helper:
 - `classify_header_line(&str, &str) -> HeaderAction` — pure function that classifies each header line as `Replace`, `AlreadyOk`, `Splice`, or `Continue`

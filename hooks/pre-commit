@@ -1,0 +1,43 @@
+#!/bin/sh
+# TalkBank pre-commit hook: auto-update @Types headers in CHAT files.
+# Installed by bootstrap.sh — applies to all repos via core.hooksPath.
+
+# Only activate in *-data repos.
+repo_name=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null)
+case "$repo_name" in
+    *-data) ;;
+    *)      exit 0 ;;
+esac
+
+# Graceful degradation: if the binary isn't available, warn and allow commit.
+if ! command -v update-chat-types >/dev/null 2>&1; then
+    echo "[TalkBank] warning: update-chat-types not found on PATH, skipping @Types check"
+    exit 0
+fi
+
+repo_root=$(git rev-parse --show-toplevel)
+
+# Run the update. If the tool itself errors (bad 0types.txt, I/O error),
+# let the non-zero exit propagate to block the commit.
+output=$(update-chat-types --chat-dir "$repo_root" 2>&1)
+status=$?
+
+if [ $status -ne 0 ]; then
+    echo "[TalkBank] error updating @Types headers:"
+    echo "$output"
+    exit 1
+fi
+
+# Check if any files were updated (line starts with "Updated" and count > 0).
+case "$output" in
+    "Updated 0 CHAT files.")
+        # Nothing changed, carry on.
+        ;;
+    "Updated "*)
+        # Files were modified — stage the changes so they're included in this commit.
+        git add -u -- '*.cha'
+        echo "[TalkBank] $output"
+        ;;
+esac
+
+exit 0

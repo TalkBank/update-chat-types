@@ -154,8 +154,8 @@ pub fn read_types_file(path: &Path) -> Result<String> {
 }
 
 /// Walk base_path once, collecting type mappings and .cha file paths,
-/// then update all .cha files. Returns number of files actually changed.
-pub fn update_types_in_place(base_path: &Path, dry_run: bool) -> Result<u32> {
+/// then update all .cha files. Returns paths of files actually changed.
+pub fn update_types_in_place(base_path: &Path, dry_run: bool) -> Result<Vec<PathBuf>> {
     let mut types_dirs: HashSet<PathBuf> = HashSet::new();
     let mut types_map: HashMap<PathBuf, Option<PathBuf>> = HashMap::new();
     let mut cha_files: Vec<PathBuf> = Vec::new();
@@ -197,17 +197,17 @@ pub fn update_types_in_place(base_path: &Path, dry_run: bool) -> Result<u32> {
         .collect::<Result<_>>()?;
 
     // Process all .cha files.
-    let mut num_updated = 0;
+    let mut updated_files: Vec<PathBuf> = Vec::new();
     for cha_path in &cha_files {
         if let Some(types_dir) = types_map.get(cha_path.parent().unwrap()).unwrap() {
             let new_types = types_info.get(types_dir).unwrap();
             let updated = update_types_to_new_path(cha_path, cha_path, new_types, dry_run)?;
             if updated {
-                num_updated += 1;
+                updated_files.push(cha_path.clone());
             }
         }
     }
-    Ok(num_updated)
+    Ok(updated_files)
 }
 
 #[cfg(test)]

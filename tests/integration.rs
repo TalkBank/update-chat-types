@@ -88,7 +88,7 @@ fn update_types_in_place_full_directory() {
     let test_dir = tmp.path().join("test-dir");
     copy_dir_all(Path::new("fixtures/test-dir"), &test_dir);
 
-    let num_updated = update_types_in_place(&test_dir, false).unwrap();
+    let updated_files = update_types_in_place(&test_dir, false).unwrap();
 
     // b1.cha: oldb → b (updated)
     let b1 = get_types(&test_dir.join("b/b1.cha")).unwrap();
@@ -116,7 +116,7 @@ fn update_types_in_place_full_directory() {
 
     // a1 was already correct, so at minimum b1, d1, c1, a2, a3 = 5 updated.
     // a1 should not have been updated.
-    assert!(num_updated >= 5);
+    assert!(updated_files.len() >= 5);
 }
 
 // --- Snapshot tests ---
